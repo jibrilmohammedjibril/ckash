@@ -6,9 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 # Database configuration
-#password = quote_plus("Halifas@2001")
-#DB_URL = f"postgresql+asyncpg://postgres:{password}@localhost:5432/ckash"
-DB_URL = os.getenv("DB_URL")
+password = quote_plus("Halifas@2001")
+DB_URL = f"postgresql+asyncpg://postgres:{password}@localhost:5432/ckash"
+#DB_URL = os.getenv("DB_URL")
 # Create async engine
 async_engine = create_async_engine(DB_URL, echo=True)
 

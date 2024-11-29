@@ -1,16 +1,26 @@
-import os
 from datetime import datetime, timezone
 import httpx
-from sqlmodel import Session, select
 import random
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 import os
 from .models import OTP
+from PIL import Image, ImageDraw, ImageFont
+import cloudinary
+import cloudinary.uploader
+from io import BytesIO
+import dotenv
 
+dotenv.load_dotenv()
 TERMII_API_KEY = os.getenv("TERMII_API_KEY")
 SENDER_ID = os.getenv("SENDER_ID")
 BASE_URL = os.getenv("BASE_URL")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),  # Replace with your Cloudinary cloud name
+    api_key=os.getenv("CLOUDINARY_API_KEY"),  # Replace with your Cloudinary API key
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")  # Replace with your Cloudinary API secret
+)
 
 
 async def send_otp_via_termii(phone_number: str, otp: str, message_template: str):
@@ -23,7 +33,7 @@ async def send_otp_via_termii(phone_number: str, otp: str, message_template: str
         message_template (str): The message template, e.g., "Your OTP is {otp}."
 
     Returns:
-        dict: Response from Termii API.
+        dict: Response indicating success or failure.
     """
     url = f"{BASE_URL}/api/sms/send"
     message = message_template.format(otp=otp)
@@ -37,7 +47,7 @@ async def send_otp_via_termii(phone_number: str, otp: str, message_template: str
         "api_key": TERMII_API_KEY,
     }
 
-    print(otp)
+    print(f"Sending OTP: {otp} to {phone_number}")
 
     # Use async with to manage the HTTP client session
     async with httpx.AsyncClient() as client:
@@ -46,55 +56,42 @@ async def send_otp_via_termii(phone_number: str, otp: str, message_template: str
             response.raise_for_status()  # Raises an exception for 4xx/5xx responses
             response_data = response.json()  # Parse the JSON response
 
-            # Check if Termii's API response is successful
-            if response_data.get("status") == "success":
-                print("OTP sent")
-                return {"success": True, "message": "OTP sent successfully."}
+            # Extract relevant fields from Termii's response
+            message_id = response_data.get("message_id")
+            balance = response_data.get("balance")
+            user = response_data.get("user")
+            message_status = response_data.get("message", "").lower()
+
+            # Check for success based on Termii's documented response structure
+            if "successfully sent" in message_status:
+                print("OTP sent successfully.")
+                return {
+                    "success": True,
+                    "message": "OTP sent successfully.",
+                    "details": {
+                        "message_id": message_id,
+                        "balance": balance,
+                        "user": user,
+                    },
+                }
             else:
-                print("OTP not sent")
-                return {"success": False, "message": response_data.get("message", "Failed to send OTP.")}
+                print("OTP failed to send.")
+                return {
+                    "success": False,
+                    "message": response_data.get("message", "Failed to send OTP."),
+                }
 
         except httpx.HTTPStatusError as e:
             # Handle non-200 HTTP responses (e.g., 4xx or 5xx errors)
             print(f"HTTP error occurred: {e}")
             return {"success": False, "message": f"HTTP error occurred: {e}"}
 
-        except httpx.RequestError as e:
-            # Handle request-related errors (e.g., network problems)
-            print(f"Request error occurred: {e}")
-            return {"success": False, "message": f"Request error occurred: {e}"}
-
-        except httpx.JSONDecodeError as e:
-            # Handle case where the response isn't valid JSON
-            print(f"Failed to decode JSON: {e}")
-            return {"success": False, "message": "Failed to decode JSON response from Termii."}
 
 async def generate_otp(length=6):
     """
     Generate a numeric OTP of the specified length.
     """
     return ''.join(str(random.randint(0, 9)) for _ in range(length))
-
-
-async def validate_otp(phone_number: str, entered_otp: str):
-    """
-    Validate the OTP entered by the user.
-    """
-    # Retrieve the OTP from Redis using the phone number as part of the key
-    stored_otp = await redis.get(f"otp:{phone_number}")
-
-    # Ensure stored_otp is a string (in case it's returned as bytes)
-    if stored_otp:
-        stored_otp = stored_otp.decode("utf-8")
-    print(stored_otp)
-
-    # Check if the stored OTP matches the entered OTP
-    if stored_otp and stored_otp == entered_otp:
-        # Remove OTP after validation
-        await redis.delete(f"otp:{phone_number}")
-        return True
-
-    return False
 
 
 async def send_user_otp(phone_number: str, db_session: AsyncSession):
@@ -126,3 +123,58 @@ async def store_otp(phone_number: str, otp: str, db_session: AsyncSession):
     # Add the new OTP record and commit to save it
     db_session.add(otp_record)
     await db_session.commit()
+
+
+async def generate_initial_image(first_name: str, last_name: str) -> Image:
+    # Create an image with a white background
+    image = Image.new("RGB", (200, 200), color="white")
+    draw = ImageDraw.Draw(image)
+
+    # Load a font
+    try:
+        font = ImageFont.truetype("arial.ttf", 80)
+    except IOError:
+        font = ImageFont.load_default()
+
+    # Get the initials from the first and last name
+    initials = f"{first_name[0].upper()}{last_name[0].upper()}"
+
+    # Define text color (random color for each letter)
+    def random_color():
+        return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+    # Positioning the text in the center of the image
+    text_bbox = draw.textbbox((0, 0), initials, font=font)  # Get the bounding box
+    text_width = text_bbox[2] - text_bbox[0]  # Width of the text
+    text_height = text_bbox[3] - text_bbox[1]  # Height of the text
+    position = ((200 - text_width) / 2, (200 - text_height) / 2)
+
+    # Draw each letter with a random color
+    for i, letter in enumerate(initials):
+        draw.text((position[0] + i * text_width / len(initials), position[1]),
+                  letter, font=font, fill=random_color())
+
+    return image
+
+
+async def upload_image_to_cloudinary(image):
+    """
+    Uploads the generated image to Cloudinary and returns the URL.
+    If the image is passed as a BytesIO object, it will be converted to PIL.Image first.
+    """
+
+    # Check if the image is already a PIL.Image
+    if isinstance(image, BytesIO):
+        # If it's a BytesIO object, load it as a PIL.Image
+        image = Image.open(image)
+
+    # Create a BytesIO buffer to store the image data
+    img_byte_arr = BytesIO()
+    image.save(img_byte_arr, format="PNG")  # Save the image in PNG format to the buffer
+    img_byte_arr.seek(0)  # Rewind the buffer to the beginning
+
+    # Upload image to Cloudinary
+    response = cloudinary.uploader.upload(img_byte_arr, resource_type="image")
+
+    # Return the URL of the uploaded image
+    return response['secure_url']

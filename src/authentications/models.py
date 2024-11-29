@@ -22,6 +22,6 @@ class OTP(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     phone_number: str = Field(nullable=False, index=True)
-    otp_code: str = Field(nullable=False)
+    otp_code: str = Field(nullable=False, index=True)
     created_date: datetime = Field(default_factory=lambda: datetime.now())
     is_valid: bool = Field(default=True)

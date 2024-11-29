@@ -19,5 +19,4 @@ class OTPRequest(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     phone_number: str
-    identifier: str
     otp: str
