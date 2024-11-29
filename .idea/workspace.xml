@@ -4,8 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 4">
+    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 5">
       <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,7 +92,15 @@
       <option name="project" value="LOCAL" />
       <updated>1732891951068</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="version 5">
+      <option name="closed" value="true" />
+      <created>1732892150261</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1732892150261</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -96,6 +108,7 @@
     <MESSAGE value="version 2" />
     <MESSAGE value="version 3" />
     <MESSAGE value="version 4" />
-    <option name="LAST_COMMIT_MESSAGE" value="version 4" />
+    <MESSAGE value="version 5" />
+    <option name="LAST_COMMIT_MESSAGE" value="version 5" />
   </component>
 </project>

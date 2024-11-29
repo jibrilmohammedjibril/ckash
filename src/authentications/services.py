@@ -87,7 +87,7 @@ async def send_otp_via_termii(phone_number: str, otp: str, message_template: str
             return {"success": False, "message": f"HTTP error occurred: {e}"}
 
 
-async def generate_otp(length=6):
+async def generate_otp(length=4):
     """
     Generate a numeric OTP of the specified length.
     """
