@@ -4,9 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 8">
+    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 9">
       <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,7 +124,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733238392903</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="version 9">
+      <option name="closed" value="true" />
+      <created>1733240182034</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1733240182034</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -133,6 +144,7 @@
     <MESSAGE value="version 6" />
     <MESSAGE value="version 7" />
     <MESSAGE value="version 8" />
-    <option name="LAST_COMMIT_MESSAGE" value="version 8" />
+    <MESSAGE value="version 9" />
+    <option name="LAST_COMMIT_MESSAGE" value="version 9" />
   </component>
 </project>

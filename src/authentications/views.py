@@ -16,8 +16,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def signup(request: SignupRequest, db: AsyncSession = Depends(get_db)):
     # Step 1: Check if the user already exists in the InitUser table
     statement = select(User).filter(User.phone_number == request.phone_number)
+    statement1 = select(InitUser).filter(InitUser.phone_number == request.phone_number)
     result = await db.execute(statement)
+    result1 = await db.execute(statement1)
     existing_user = result.scalars().first()
+    existing_user_init = result1.scalars().first()
+
+    if existing_user_init:
+        await db.delete(existing_user_init)
+        await db.commit()
 
     if existing_user:
         raise HTTPException(status_code=400, detail="User with this phone number already exists.")

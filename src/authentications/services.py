@@ -119,9 +119,12 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
     result = await db_session.execute(statement)
     existing_otp = result.scalars().first()
 
+    # Current time with timezone
+    time_now = datetime.now(timezone.utc)
+    time_now_naive = time_now.replace(tzinfo=None)
+
     if existing_otp:
-        time_now = datetime.now()
-        time_since_created = time_now - existing_otp.created_date
+        time_since_created = time_now_naive - existing_otp.created_date
 
         # Case 4: Request count <= 5
         if existing_otp.request_count < MAX_REQUESTS_LIMIT:
@@ -163,7 +166,7 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
         phone_number=phone_number,
         otp_code=new_otp,
         is_valid=True,
-        created_date=datetime.now(),
+        created_date=time_now,
         request_count=1,
     )
     db_session.add(new_otp_record)

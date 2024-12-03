@@ -10,6 +10,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 #DB_URL = f"postgresql+asyncpg://postgres:{password}@localhost:5432/ckash"
 DB_URL = os.getenv("DB_URL")
 # Create async engine
+if DB_URL is None:
+    password = quote_plus("Halifas@2001")
+    DB_URL = f"postgresql+asyncpg://postgres:{password}@localhost:5432/ckash"
 
 
 async_engine = create_async_engine(DB_URL, echo=True)
