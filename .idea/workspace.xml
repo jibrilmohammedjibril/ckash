@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 9">
+    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 10">
       <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/authentications/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/authentications/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -132,7 +132,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733240182034</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="version 10">
+      <option name="closed" value="true" />
+      <created>1733242564034</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1733242564034</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -145,6 +153,7 @@
     <MESSAGE value="version 7" />
     <MESSAGE value="version 8" />
     <MESSAGE value="version 9" />
-    <option name="LAST_COMMIT_MESSAGE" value="version 9" />
+    <MESSAGE value="version 10" />
+    <option name="LAST_COMMIT_MESSAGE" value="version 10" />
   </component>
 </project>

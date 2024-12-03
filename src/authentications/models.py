@@ -37,3 +37,4 @@ class OTP(SQLModel, table=True):
     created_date: datetime = Field(default_factory=lambda: datetime.now())
     is_valid: bool = Field(default=True)
     request_count: int = Field(default=1)
+    expire_date: datetime = Field(default_factory=lambda: datetime.now())
