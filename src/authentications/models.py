@@ -36,3 +36,4 @@ class OTP(SQLModel, table=True):
     otp_code: str = Field(nullable=False, index=True)
     created_date: datetime = Field(default_factory=lambda: datetime.now())
     is_valid: bool = Field(default=True)
+    request_count: int = Field(default=1)
