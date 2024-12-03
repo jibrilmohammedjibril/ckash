@@ -10,6 +10,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 #DB_URL = f"postgresql+asyncpg://postgres:{password}@localhost:5432/ckash"
 DB_URL = os.getenv("DB_URL")
 # Create async engine
+
+
 async_engine = create_async_engine(DB_URL, echo=True)
 
 # Create sessionmaker bound to the async engine
