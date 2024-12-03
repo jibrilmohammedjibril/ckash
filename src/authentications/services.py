@@ -1,9 +1,12 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import httpx
 import random
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 import os
+
+from sqlmodel import select
+
 from .models import OTP
 from PIL import Image, ImageDraw, ImageFont
 import cloudinary
@@ -94,12 +97,91 @@ async def generate_otp(length=4):
     return ''.join(str(random.randint(0, 9)) for _ in range(length))
 
 
+MAX_REQUESTS_BEFORE_BAN = 10
+MAX_REQUESTS_LIMIT = 5
+OTP_VALIDITY_PERIOD = timedelta(minutes=5)
+RESEND_DELAY_PERIOD = timedelta(minutes=30)
+
+
 async def send_user_otp(phone_number: str, db_session: AsyncSession):
-    otp = await generate_otp()
-    await store_otp(phone_number, otp, db_session)
-    message_template = f"Your OTP is {otp}. It is valid for 5 minutes."
-    response = await send_otp_via_termii(phone_number, otp, message_template)
-    return response
+    """
+    Handle OTP requests with limits and validity checks.
+
+    Args:
+        phone_number (str): The recipient's phone number.
+        db_session (AsyncSession): The database session.
+
+    Returns:
+        dict: Response indicating success or failure.
+    """
+    # Check if the phone number exists in the OTP table
+    statement = select(OTP).where(OTP.phone_number == phone_number)
+    result = await db_session.execute(statement)
+    existing_otp = result.scalars().first()
+
+    if existing_otp:
+        time_now = datetime.now()
+        time_since_created = time_now - existing_otp.created_date
+
+        # Case 4: Request count <= 5
+        if existing_otp.request_count < MAX_REQUESTS_LIMIT:
+            new_otp = await generate_otp()
+            existing_otp.otp_code = new_otp
+            existing_otp.is_valid = True
+            existing_otp.request_count += 1
+            await db_session.commit()
+
+            # Send OTP to the user
+            message_template = f"Your OTP is {new_otp}. It is valid for 5 minutes."
+            response = await send_otp_via_termii(phone_number, new_otp, message_template)
+            return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
+
+        # Case 3: Request count > 10
+        if existing_otp.request_count > MAX_REQUESTS_BEFORE_BAN:
+            return {"success": False, "message": "Your account has been banned due to excessive requests."}
+
+        # Case 1: Request count > 5 and time < 30 minutes
+        if existing_otp.request_count >= MAX_REQUESTS_LIMIT and time_since_created < RESEND_DELAY_PERIOD:
+            return {"success": False, "message": "Too many requests. Please try again after 30 minutes."}
+
+        # Case 2: Request count >= 5 and time >= 30 minutes
+        if existing_otp.request_count <= MAX_REQUESTS_BEFORE_BAN and time_since_created >= RESEND_DELAY_PERIOD:
+            new_otp = await generate_otp()
+            existing_otp.otp_code = new_otp
+            existing_otp.is_valid = True
+            existing_otp.request_count += 1
+            await db_session.commit()
+
+            # Send OTP to the user
+            message_template = f"Your OTP is {new_otp}. It is valid for 5 minutes."
+            response = await send_otp_via_termii(phone_number, new_otp, message_template)
+            return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
+
+    # If no OTP exists, create a new one
+    new_otp = await generate_otp()
+    new_otp_record = OTP(
+        phone_number=phone_number,
+        otp_code=new_otp,
+        is_valid=True,
+        created_date=datetime.now(),
+        request_count=1,
+    )
+    db_session.add(new_otp_record)
+    await db_session.commit()
+
+    # Send OTP to the user
+    message_template = f"Your OTP is {new_otp}. It is valid for 5 minutes."
+    response = await send_otp_via_termii(phone_number, new_otp, message_template)
+
+    return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
+
+
+# async def send_user_otp(phone_number: str, db_session: AsyncSession):
+#     otp = await generate_otp()
+#     await store_otp(phone_number, otp, db_session)
+#     message_template = f"Your OTP is {otp}. It is valid for 5 minutes."
+#     response = await send_otp_via_termii(phone_number, otp, message_template)
+#     return response
 
 
 async def store_otp(phone_number: str, otp: str, db_session: AsyncSession):
