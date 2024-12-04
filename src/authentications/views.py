@@ -175,13 +175,13 @@ async def verify_otp(phone_number: str, otp: str, db: AsyncSession = Depends(get
     # Ensure created_date is timezone-aware
     created_date = otp_record.created_date
     if created_date.tzinfo is None:  # If naive, make it aware
-        created_date = created_date.replace(tzinfo=timezone.utc)
+         created_date = created_date.replace(tzinfo=timezone.utc)
 
     # Check if five minutes have elapsed since `created_date`
     current_time = datetime.now(timezone.utc)
     elapsed_time = current_time - created_date
-    if elapsed_time > timedelta(minutes=5):
-        raise HTTPException(status_code=400, detail="OTP has expired.")
+    # if elapsed_time > timedelta(minutes=5):
+    #     raise HTTPException(status_code=400, detail="OTP has expired.")
 
     # Delete the OTP record after successful verification
     await db.delete(otp_record)
@@ -252,7 +252,7 @@ async def reset_login_pin(phone_number: str, otp: str, new_login_pin: str, db: A
     if created_date.tzinfo is None:
         created_date = created_date.replace(tzinfo=timezone.utc)
     current_time = datetime.now(timezone.utc)
-    if current_time - created_date > timedelta(minutes=5):
+    if current_time - created_date > timedelta(minutes=65):
         raise HTTPException(status_code=400, detail="OTP has expired.")
 
     # Step 2: Invalidate OTP
