@@ -4,10 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 11">
+    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 12">
       <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/authentications/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -146,7 +150,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733262234497</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="version 12">
+      <option name="closed" value="true" />
+      <created>1733316618397</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1733316618397</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -161,6 +173,7 @@
     <MESSAGE value="version 9" />
     <MESSAGE value="version 10" />
     <MESSAGE value="version 11" />
-    <option name="LAST_COMMIT_MESSAGE" value="version 11" />
+    <MESSAGE value="version 12" />
+    <option name="LAST_COMMIT_MESSAGE" value="version 12" />
   </component>
 </project>

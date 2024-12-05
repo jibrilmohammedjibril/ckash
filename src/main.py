@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-from .database import init_db
+from sqlalchemy import event
+
+from .database import init_db, async_engine
 from .api import router
 from sqlmodel import SQLModel
 from contextlib import asynccontextmanager
@@ -12,6 +14,13 @@ async def lifespan(app: FastAPI):
     await init_db()
     yield
     # Run any shutdown tasks if needed
+
+
+@event.listens_for(async_engine.sync_engine, "connect")
+def set_timezone(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("SET TIME ZONE 'UTC';")
+    cursor.close()
 
 
 # Initialize the FastAPI application

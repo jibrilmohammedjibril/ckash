@@ -103,6 +103,88 @@ OTP_VALIDITY_PERIOD = timedelta(minutes=5)
 RESEND_DELAY_PERIOD = timedelta(minutes=30)
 
 
+# async def send_user_otp(phone_number: str, db_session: AsyncSession):
+#     """
+#     Handle OTP requests with limits and validity checks.
+#
+#     Args:
+#         phone_number (str): The recipient's phone number.
+#         db_session (AsyncSession): The database session.
+#
+#     Returns:
+#         dict: Response indicating success or failure.
+#     """
+#     # Check if the phone number exists in the OTP table
+#     statement = select(OTP).where(OTP.phone_number == phone_number)
+#     result = await db_session.execute(statement)
+#     existing_otp = result.scalars().first()
+#
+#     # Current time with timezone
+#     time_now = datetime.now(timezone.utc)
+#
+#     if existing_otp:
+#         # Ensure `created_date` is timezone-aware
+#         created_date = existing_otp.created_date
+#         if created_date.tzinfo is None:  # If `created_date` is naive, make it timezone-aware
+#             created_date = created_date.replace(tzinfo=timezone.utc)
+#
+#         time_since_created = time_now - created_date
+#
+#         # Case 4: Request count <= 5
+#         if existing_otp.request_count < MAX_REQUESTS_LIMIT:
+#             new_otp = await generate_otp()
+#             existing_otp.otp_code = new_otp
+#             existing_otp.is_valid = True
+#             existing_otp.request_count += 1
+#             existing_otp.expire_date = time_now.replace(tzinfo=timezone.utc)
+#             await db_session.commit()
+#
+#             # Send OTP to the user
+#             message_template = f"Your OTP is {new_otp}. It is valid for 5 minutes."
+#             response = await send_otp_via_termii(phone_number, new_otp, message_template)
+#             return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
+#
+#         # Case 3: Request count > 10
+#         if existing_otp.request_count > MAX_REQUESTS_BEFORE_BAN:
+#             return {"success": False, "message": "Your account has been banned due to excessive requests."}
+#
+#         # Case 1: Request count > 5 and time < 30 minutes
+#         if existing_otp.request_count >= MAX_REQUESTS_LIMIT and time_since_created < RESEND_DELAY_PERIOD:
+#             return {"success": False, "message": "Too many requests. Please try again after 30 minutes."}
+#
+#         # Case 2: Request count >= 5 and time >= 30 minutes
+#         if existing_otp.request_count <= MAX_REQUESTS_BEFORE_BAN and time_since_created >= RESEND_DELAY_PERIOD:
+#             new_otp = await generate_otp()
+#             existing_otp.otp_code = new_otp
+#             existing_otp.is_valid = True
+#             existing_otp.request_count += 1
+#             existing_otp.expire_date = time_now.replace(tzinfo=timezone.utc)
+#             await db_session.commit()
+#
+#             # Send OTP to the user
+#             message_template = f"Your OTP is {new_otp}. It is valid for 5 minutes."
+#             response = await send_otp_via_termii(phone_number, new_otp, message_template)
+#             return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
+#
+#     # If no OTP exists, create a new one
+#     new_otp = await generate_otp()
+#     new_otp_record = OTP(
+#         phone_number=phone_number,
+#         otp_code=new_otp,
+#         is_valid=True,
+#         created_date=time_now.replace(tzinfo=timezone.utc),
+#         request_count=1,
+#     )
+#     db_session.add(new_otp_record)
+#     await db_session.commit()
+#
+#     # Send OTP to the user
+#     message_template = f"Your OTP is {new_otp}. It is valid for 5 minutes."
+#     response = await send_otp_via_termii(phone_number, new_otp, message_template)
+#
+#     return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
+
+
 async def send_user_otp(phone_number: str, db_session: AsyncSession):
     """
     Handle OTP requests with limits and validity checks.
@@ -114,7 +196,7 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
     Returns:
         dict: Response indicating success or failure.
     """
-    # Check if the phone number exists in the OTP table
+    # Query the database for the existing OTP record
     statement = select(OTP).where(OTP.phone_number == phone_number)
     result = await db_session.execute(statement)
     existing_otp = result.scalars().first()
@@ -123,20 +205,34 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
     time_now = datetime.now(timezone.utc)
 
     if existing_otp:
-        # Ensure `created_date` is timezone-aware
+        # Ensure created_date is timezone-aware
         created_date = existing_otp.created_date
-        if created_date.tzinfo is None:  # If `created_date` is naive, make it timezone-aware
+        if created_date.tzinfo is None:  # If created_date is naive, make it timezone-aware
             created_date = created_date.replace(tzinfo=timezone.utc)
 
         time_since_created = time_now - created_date
+        print(existing_otp.request_count)
+        # Case 3: Request count > 10
+        if existing_otp.request_count > MAX_REQUESTS_BEFORE_BAN:
+            return {"success": False, "message": "Your account has been banned due to excessive requests."}
 
-        # Case 4: Request count <= 5
-        if existing_otp.request_count < MAX_REQUESTS_LIMIT:
+        # Case 1: Request count > 5 and time < 30 minutes
+        if existing_otp.request_count >= 5 and time_now - existing_otp.created_date < timedelta(minutes=30):
+            return {"success": False, "message": "Too many requests. Please try again after 30 minutes."}
+
+        # Case 2: Request count >= 5 and time >= 30 minutes
+        if existing_otp.request_count >= MAX_REQUESTS_LIMIT and time_now - existing_otp.created_date > timedelta(minutes=30):
+            print("case 1")
+            print(existing_otp.request_count >= MAX_REQUESTS_LIMIT)
+            print(time_now - existing_otp.created_date > timedelta(minutes=30))
+            print(f"{time_now}.....{existing_otp}")
+            print(time_now - existing_otp.created_date)
+
             new_otp = await generate_otp()
             existing_otp.otp_code = new_otp
             existing_otp.is_valid = True
             existing_otp.request_count += 1
-            existing_otp.expire_date = time_now.replace(tzinfo=None)
+            existing_otp.expire_date = time_now
             await db_session.commit()
 
             # Send OTP to the user
@@ -144,21 +240,16 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
             response = await send_otp_via_termii(phone_number, new_otp, message_template)
             return {"success": True, "message": "OTP sent successfully.", "otp": new_otp}
 
-        # Case 3: Request count > 10
-        if existing_otp.request_count > MAX_REQUESTS_BEFORE_BAN:
-            return {"success": False, "message": "Your account has been banned due to excessive requests."}
+        # Case 4: Request count <= 5
+        if existing_otp.request_count < MAX_REQUESTS_LIMIT:
+            print("case 4")
+            print(existing_otp.request_count < MAX_REQUESTS_LIMIT)
 
-        # Case 1: Request count > 5 and time < 30 minutes
-        if existing_otp.request_count >= MAX_REQUESTS_LIMIT and time_since_created < RESEND_DELAY_PERIOD:
-            return {"success": False, "message": "Too many requests. Please try again after 30 minutes."}
-
-        # Case 2: Request count >= 5 and time >= 30 minutes
-        if existing_otp.request_count <= MAX_REQUESTS_BEFORE_BAN and time_since_created >= RESEND_DELAY_PERIOD:
             new_otp = await generate_otp()
             existing_otp.otp_code = new_otp
             existing_otp.is_valid = True
             existing_otp.request_count += 1
-            existing_otp.expire_date = time_now.replace(tzinfo=None)
+            existing_otp.expire_date = time_now
             await db_session.commit()
 
             # Send OTP to the user
@@ -172,8 +263,9 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
         phone_number=phone_number,
         otp_code=new_otp,
         is_valid=True,
-        created_date=time_now.replace(tzinfo=None),
+        created_date=time_now,
         request_count=1,
+        expire_date=time_now,
     )
     db_session.add(new_otp_record)
     await db_session.commit()
@@ -193,27 +285,27 @@ async def send_user_otp(phone_number: str, db_session: AsyncSession):
 #     return response
 
 
-async def store_otp(phone_number: str, otp: str, db_session: AsyncSession):
-    # First, mark the existing OTP as invalid
-    # Use `db_session.execute` to perform the update with the `update` query
-    await db_session.execute(
-        OTP.__table__.update()
-        .where(OTP.phone_number == phone_number)
-        .values(is_valid=False)
-    )
-    # Commit the changes to make them persistent in the database
-    await db_session.commit()
-
-    # Now create the new OTP record
-    otp_record = OTP(
-        phone_number=phone_number,
-        otp_code=otp,
-        created_at=datetime.now(timezone.utc)
-    )
-
-    # Add the new OTP record and commit to save it
-    db_session.add(otp_record)
-    await db_session.commit()
+# async def store_otp(phone_number: str, otp: str, db_session: AsyncSession):
+#     # First, mark the existing OTP as invalid
+#     # Use `db_session.execute` to perform the update with the `update` query
+#     await db_session.execute(
+#         OTP.__table__.update()
+#         .where(OTP.phone_number == phone_number)
+#         .values(is_valid=False)
+#     )
+#     # Commit the changes to make them persistent in the database
+#     await db_session.commit()
+#
+#     # Now create the new OTP record
+#     otp_record = OTP(
+#         phone_number=phone_number,
+#         otp_code=otp,
+#         created_at=datetime.now(timezone.utc)
+#     )
+#
+#     # Add the new OTP record and commit to save it
+#     db_session.add(otp_record)
+#     await db_session.commit()
 
 
 async def generate_initial_image(first_name: str, last_name: str) -> Image:

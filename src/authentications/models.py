@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+
+from sqlalchemy import Column
+from sqlalchemy.types import TIMESTAMP
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from uuid import UUID, uuid4
@@ -14,7 +17,13 @@ class User(SQLModel, table=True):
     login_pin: str = Field(nullable=False)
     device_id: Optional[str] = Field(default=None)
     profile_picture: Optional[str] = Field(default=None)
-    created_date: datetime = Field(default_factory=lambda: datetime.now())
+    created_date: datetime = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            default=datetime.now(timezone.utc)
+        )
+    )
 
 
 class InitUser(SQLModel, table=True):
@@ -34,7 +43,17 @@ class OTP(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     phone_number: str = Field(nullable=False, index=True)
     otp_code: str = Field(nullable=False, index=True)
-    created_date: datetime = Field(default_factory=lambda: datetime.now())
+    created_date: datetime = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            default=datetime.now(timezone.utc)
+        )
+    )
     is_valid: bool = Field(default=True)
     request_count: int = Field(default=1)
-    expire_date: datetime = Field(default_factory=lambda: datetime.now())
+    expire_date: datetime = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            default=datetime.now(timezone.utc)))
