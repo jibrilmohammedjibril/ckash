@@ -211,9 +211,8 @@ async def reset_login_pin(phone_number: str, otp: str, new_login_pin: str, db: A
         raise HTTPException(status_code=400, detail="Invalid or expired OTP.")
 
     # Ensure OTP is not expired
-    created_date = otp_record.created_date
-    if created_date.tzinfo is None:
-        created_date = created_date.replace(tzinfo=timezone.utc)
+    created_date = otp_record.expire_date
+
     current_time = datetime.now(timezone.utc)
     if current_time - created_date > timedelta(minutes=5):
         raise HTTPException(status_code=400, detail="OTP has expired.")
