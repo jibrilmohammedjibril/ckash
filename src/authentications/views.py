@@ -1,7 +1,8 @@
 from datetime import datetime, timezone, timedelta
 
 from .models import User, OTP, InitUser
-from .schemas import SigninRequest, SignupRequest, TokenResponse, LoginRequest
+from .schemas import SigninRequest, SignupRequest, TokenResponse, LoginRequest, VerifyOTPSignup, VerifyOTPSignin, \
+    ForgotLoginPin, ResetLoginPin, ResendOTP
 from .services import send_user_otp, upload_image_to_cloudinary, generate_initial_image, generate_otp
 from fastapi import APIRouter, Depends, status, BackgroundTasks
 from fastapi.exceptions import HTTPException
@@ -75,9 +76,9 @@ async def signin(request: SigninRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/verify-otp_signup/")
-async def verify_otp_signup(phone_number: str, otp: str, db: AsyncSession = Depends(get_db)):
+async def verify_otp_signup(request: VerifyOTPSignup, db: AsyncSession = Depends(get_db)):
     # Step 1: Query the database for the OTP record based on the OTP code
-    statement = select(OTP).where(OTP.otp_code == otp, OTP.is_valid == True)
+    statement = select(OTP).where(OTP.otp_code == request.otp, OTP.is_valid == True)
     result = await db.execute(statement)
     otp_record = result.scalars().first()
 
@@ -85,7 +86,7 @@ async def verify_otp_signup(phone_number: str, otp: str, db: AsyncSession = Depe
         raise HTTPException(status_code=404, detail="Invalid or expired OTP.")
 
     # Step 2: Check if the phone number matches
-    if otp_record.phone_number != phone_number:
+    if otp_record.phone_number != request.phone_number:
         raise HTTPException(status_code=400, detail="The provided phone number does not match the OTP.")
 
     # Step 3: Ensure created_date is timezone-aware
@@ -94,11 +95,14 @@ async def verify_otp_signup(phone_number: str, otp: str, db: AsyncSession = Depe
     # Step 4: Check if five minutes have elapsed since `created_date`
     current_time = datetime.now(timezone.utc)
     elapsed_time = current_time - created_date
+    print(f"the created date is {created_date}")
+    print(f"the current date is {current_time}")
+    print(f"the remaining date is {elapsed_time}")
     if elapsed_time > timedelta(minutes=5):
         raise HTTPException(status_code=400, detail="OTP has expired.")
 
     # Step 5: Retrieve the user data from the InitUser table
-    statement = select(InitUser).where(InitUser.phone_number == phone_number)
+    statement = select(InitUser).where(InitUser.phone_number == request.phone_number)
     result = await db.execute(statement)
     init_user_record = result.scalars().first()
 
@@ -128,9 +132,9 @@ async def verify_otp_signup(phone_number: str, otp: str, db: AsyncSession = Depe
 
 
 @router.post("/verify-otp_signin/")
-async def verify_otp_signin(phone_number: str, otp: str, device_id: str, db: AsyncSession = Depends(get_db)):
+async def verify_otp_signin(request: VerifyOTPSignin, db: AsyncSession = Depends(get_db)):
     # Query the database for the OTP record based on the OTP code
-    statement = select(OTP).where(OTP.otp_code == otp, OTP.is_valid == True)
+    statement = select(OTP).where(OTP.otp_code == request.otp, OTP.is_valid == True)
     result = await db.execute(statement)
     otp_record = result.scalars().first()
 
@@ -138,17 +142,20 @@ async def verify_otp_signin(phone_number: str, otp: str, device_id: str, db: Asy
         raise HTTPException(status_code=404, detail="Invalid or expired OTP.")
 
     # Check if the phone number matches
-    if otp_record.phone_number != phone_number:
+    if otp_record.phone_number != request.phone_number:
         raise HTTPException(status_code=400, detail="The provided phone number does not match the OTP.")
 
     # Ensure created_date is timezone-aware
     created_date = otp_record.created_date
-    if created_date.tzinfo is None:  # If naive, make it aware
-        created_date = created_date.replace(tzinfo=timezone.utc)
+
 
     # Check if five minutes have elapsed since `created_date`
     current_time = datetime.now(timezone.utc)
     elapsed_time = current_time - created_date
+    print(f"the created date is {created_date}")
+    print(f"the current date is {current_time}")
+    print(f"the remaining date is {elapsed_time}")
+
     if elapsed_time > timedelta(minutes=5):
         raise HTTPException(status_code=400, detail="OTP has expired.")
 
@@ -157,14 +164,14 @@ async def verify_otp_signin(phone_number: str, otp: str, device_id: str, db: Asy
     await db.commit()
 
     # Query the User table using the phone number
-    user_query = select(User).where(User.phone_number == phone_number)
+    user_query = select(User).where(User.phone_number == request.phone_number)
     user_result = await db.execute(user_query)
     user_record = user_result.scalars().first()
 
     if not user_record:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    user_record.device_id = device_id
+    user_record.device_id = request.device_id
     db.add(user_record)
     await db.commit()
 
@@ -181,9 +188,9 @@ async def verify_otp_signin(phone_number: str, otp: str, device_id: str, db: Asy
 
 
 @router.post("/forgot-login-pin/")
-async def forgot_login_pin(phone_number: str, db: AsyncSession = Depends(get_db)):
+async def forgot_login_pin(request: ForgotLoginPin, db: AsyncSession = Depends(get_db)):
     # Step 1: Verify user exists
-    statement = select(User).where(User.phone_number == phone_number)
+    statement = select(User).where(User.phone_number == request.phone_number)
     result = await db.execute(statement)
     user = result.scalars().first()
 
@@ -193,7 +200,7 @@ async def forgot_login_pin(phone_number: str, db: AsyncSession = Depends(get_db)
     # Step 2: Generate OTP and store it in the OTP table
 
     # Step 3: Send OTP to user
-    response = await send_user_otp(phone_number, db)
+    response = await send_user_otp(request.phone_number, db)
     if not response.get("success"):
         raise HTTPException(status_code=500, detail="Failed to send OTP.")
 
@@ -201,9 +208,9 @@ async def forgot_login_pin(phone_number: str, db: AsyncSession = Depends(get_db)
 
 
 @router.post("/reset-login-pin/")
-async def reset_login_pin(phone_number: str, otp: str, new_login_pin: str, db: AsyncSession = Depends(get_db)):
+async def reset_login_pin(request: ResetLoginPin, db: AsyncSession = Depends(get_db)):
     # Step 1: Validate the OTP
-    statement = select(OTP).where(OTP.phone_number == phone_number, OTP.otp_code == otp, OTP.is_valid == True)
+    statement = select(OTP).where(OTP.phone_number == request.phone_number, OTP.otp_code == request.otp, OTP.is_valid == True)
     result = await db.execute(statement)
     otp_record = result.scalars().first()
 
@@ -222,14 +229,14 @@ async def reset_login_pin(phone_number: str, otp: str, new_login_pin: str, db: A
     db.add(otp_record)
 
     # Step 3: Update the user's login pin
-    statement = select(User).where(User.phone_number == phone_number)
+    statement = select(User).where(User.phone_number == request.phone_number)
     result = await db.execute(statement)
     user = result.scalars().first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    user.login_pin = await hash_password(new_login_pin)
+    user.login_pin = await hash_password(request.new_login_pin)
     db.add(user)
     await db.delete(otp_record)
     await db.commit()
@@ -238,13 +245,13 @@ async def reset_login_pin(phone_number: str, otp: str, new_login_pin: str, db: A
 
 
 @router.post("/resend-otp/")
-async def resend_otp(phone_number: str, db: AsyncSession = Depends(get_db)):
+async def resend_otp(request: ResendOTP, db: AsyncSession = Depends(get_db)):
     """
     Resend OTP to the given phone number.
     """
     # Step 1: Verify user exists
 
-    statement = select(OTP).where(OTP.phone_number == phone_number)
+    statement = select(OTP).where(OTP.phone_number == request.phone_number)
 
     result = await db.execute(statement)
     user = result.scalars().first()
@@ -252,7 +259,7 @@ async def resend_otp(phone_number: str, db: AsyncSession = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="Invalid request.")
 
-    response = await send_user_otp(phone_number, db)
+    response = await send_user_otp(request.phone_number, db)
     if not response.get("success"):
         raise HTTPException(status_code=500, detail="Failed to resend OTP.")
 

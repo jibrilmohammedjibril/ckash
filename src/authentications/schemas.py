@@ -33,3 +33,28 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+
+
+class VerifyOTPSignup(BaseModel):
+    phone_number: str
+    otp: str
+
+
+class VerifyOTPSignin(BaseModel):
+    phone_number: str
+    otp: str
+    device_id: str
+
+
+class ForgotLoginPin(BaseModel):
+    phone_number: str
+
+
+class ResetLoginPin(BaseModel):
+    phone_number: str
+    otp: str
+    new_login_pin: str
+
+
+class ResendOTP(BaseModel):
+    phone_number: str
