@@ -276,6 +276,10 @@ async def login(login_data: LoginRequest, db: AsyncSession = Depends(get_db)):
     access_token = create_access_token({"sub": user.phone_number})
     refresh_token = create_refresh_token({"sub": user.phone_number})
 
+    print(f"{login_data.device_id}  deviceID")
+    print(f"{login_data.google_id}  googleID")
+
+
     # Save refresh token in the database
     user.refresh_token = refresh_token
     db.add(user)

@@ -25,6 +25,8 @@ class VerifyOTPRequest(BaseModel):
 class LoginRequest(BaseModel):
     phone_number: str
     pin: str
+    device_id: str
+    google_id: str
 
 
 class TokenResponse(BaseModel):
