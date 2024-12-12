@@ -4,14 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 12">
+    <list default="true" id="d1ffb3fe-86e1-4561-a483-7d4f9144e299" name="Changes" comment="version 13">
       <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/user/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/user/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/authentications/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/authentications/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/authentications/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/authentications/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/authentications/schemas.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -158,7 +156,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733316618397</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="version 13">
+      <option name="closed" value="true" />
+      <created>1733440370649</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1733440370649</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -174,6 +180,7 @@
     <MESSAGE value="version 10" />
     <MESSAGE value="version 11" />
     <MESSAGE value="version 12" />
-    <option name="LAST_COMMIT_MESSAGE" value="version 12" />
+    <MESSAGE value="version 13" />
+    <option name="LAST_COMMIT_MESSAGE" value="version 13" />
   </component>
 </project>

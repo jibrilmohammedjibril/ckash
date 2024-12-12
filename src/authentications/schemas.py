@@ -20,3 +20,14 @@ class OTPRequest(BaseModel):
 class VerifyOTPRequest(BaseModel):
     phone_number: str
     otp: str
+
+
+class LoginRequest(BaseModel):
+    phone_number: str
+    pin: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"

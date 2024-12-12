@@ -1,13 +1,16 @@
 from datetime import datetime, timezone, timedelta
 
 from .models import User, OTP, InitUser
-from .schemas import SigninRequest, SignupRequest
+from .schemas import SigninRequest, SignupRequest, TokenResponse, LoginRequest
 from .services import send_user_otp, upload_image_to_cloudinary, generate_initial_image, generate_otp
 from fastapi import APIRouter, Depends, status, BackgroundTasks
 from fastapi.exceptions import HTTPException
 from src.database import get_db
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from .utilities import verify_password, create_access_token, create_refresh_token, decode_token, REFRESH_SECRET_KEY, \
+    get_current_user, hash_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -34,7 +37,7 @@ async def signup(request: SignupRequest, db: AsyncSession = Depends(get_db)):
         first_name=request.first_name,
         last_name=request.last_name,
         phone_number=request.phone_number,
-        login_pin=request.login_pin
+        login_pin=await hash_password(request.login_pin)
     )
     db.add(new_init_user)
     await db.commit()
@@ -72,7 +75,7 @@ async def signin(request: SigninRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/verify-otp_signup/")
-async def verify_otp(phone_number: str, otp: str, db: AsyncSession = Depends(get_db)):
+async def verify_otp_signup(phone_number: str, otp: str, db: AsyncSession = Depends(get_db)):
     # Step 1: Query the database for the OTP record based on the OTP code
     statement = select(OTP).where(OTP.otp_code == otp, OTP.is_valid == True)
     result = await db.execute(statement)
@@ -124,40 +127,8 @@ async def verify_otp(phone_number: str, otp: str, db: AsyncSession = Depends(get
     return {"success": True, "message": "OTP verified successfully, user account created."}
 
 
-@router.post("/verify-otp_signup/")
-async def verify_otp(phone_number: str, otp: str, db: AsyncSession = Depends(get_db)):
-    # Query the database for the OTP record based on the OTP code
-    statement = select(OTP).where(OTP.otp_code == otp, OTP.is_valid == True)
-    result = await db.execute(statement)
-    otp_record = result.scalars().first()
-
-    if not otp_record:
-        raise HTTPException(status_code=404, detail="Invalid or expired OTP.")
-
-    # Check if the phone number matches
-    if otp_record.phone_number != phone_number:
-        raise HTTPException(status_code=400, detail="The provided phone number does not match the OTP.")
-
-    # Ensure created_date is timezone-aware
-    created_date = otp_record.created_date
-    if created_date.tzinfo is None:  # If naive, make it aware
-        created_date = created_date.replace(tzinfo=timezone.utc)
-
-    # Check if five minutes have elapsed since `created_date`
-    current_time = datetime.now(timezone.utc)
-    elapsed_time = current_time - created_date
-    if elapsed_time > timedelta(minutes=5):
-        raise HTTPException(status_code=400, detail="OTP has expired.")
-
-    # Delete the OTP record after successful verification
-    await db.delete(otp_record)
-    await db.commit()
-
-    return {"success": True, "message": "OTP verified successfully."}
-
-
 @router.post("/verify-otp_signin/")
-async def verify_otp(phone_number: str, otp: str, db: AsyncSession = Depends(get_db)):
+async def verify_otp_signin(phone_number: str, otp: str, device_id: str, db: AsyncSession = Depends(get_db)):
     # Query the database for the OTP record based on the OTP code
     statement = select(OTP).where(OTP.otp_code == otp, OTP.is_valid == True)
     result = await db.execute(statement)
@@ -192,6 +163,10 @@ async def verify_otp(phone_number: str, otp: str, db: AsyncSession = Depends(get
 
     if not user_record:
         raise HTTPException(status_code=404, detail="User not found.")
+
+    user_record.device_id = device_id
+    db.add(user_record)
+    await db.commit()
 
     # Return user information
     return {
@@ -255,7 +230,7 @@ async def reset_login_pin(phone_number: str, otp: str, new_login_pin: str, db: A
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    user.login_pin = new_login_pin
+    user.login_pin = await hash_password(new_login_pin)
     db.add(user)
     await db.delete(otp_record)
     await db.commit()
@@ -283,3 +258,57 @@ async def resend_otp(phone_number: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to resend OTP.")
 
     return {"message": "OTP resent successfully."}
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(login_data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    # Query user by phone number
+    statement = select(User).where(User.phone_number == login_data.phone_number)
+    result = await db.execute(statement)
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not await verify_password(login_data.pin, user.login_pin):
+        raise HTTPException(status_code=401, detail="Invalid PIN")
+
+    # Generate tokens
+    access_token = create_access_token({"sub": user.phone_number})
+    refresh_token = create_refresh_token({"sub": user.phone_number})
+
+    # Save refresh token in the database
+    user.refresh_token = refresh_token
+    db.add(user)
+    await db.commit()
+
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+@router.post("/refresh-token", response_model=TokenResponse)
+async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
+    payload = decode_token(refresh_token, REFRESH_SECRET_KEY)
+    phone_number = payload.get("sub")
+
+    if not phone_number:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Query user by phone number and validate refresh token
+    statement = select(User).where(User.phone_number == phone_number)
+    result = await db.execute(statement)
+    user = result.scalars().first()
+
+    if not user or user.refresh_token != refresh_token:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    # Generate new access token
+    access_token = create_access_token({"sub": user.phone_number})
+
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+@router.get("/secure-data")
+async def secure_data(current_user: User = Depends(get_current_user)):
+    return {
+        "message": f"Welcome {current_user.phone_number}, here is your secure data."
+    }

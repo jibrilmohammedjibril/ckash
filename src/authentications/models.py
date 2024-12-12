@@ -16,7 +16,9 @@ class User(SQLModel, table=True):
     phone_number: str = Field(nullable=False, unique=True)
     login_pin: str = Field(nullable=False)
     device_id: Optional[str] = Field(default=None)
+    google_id: Optional[str] = Field(default=None)
     profile_picture: Optional[str] = Field(default=None)
+    refresh_token: Optional[str] = Field(default=None)
     created_date: datetime = Field(
         sa_column=Column(
             TIMESTAMP(timezone=True),
