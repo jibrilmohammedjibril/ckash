@@ -9,8 +9,8 @@ from src.database import get_db
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .utilities import verify_password, create_access_token, create_refresh_token, decode_token, REFRESH_SECRET_KEY, \
-    get_current_user, hash_password
+from .utilities import (verify_password, create_access_token, create_refresh_token, decode_token, REFRESH_SECRET_KEY,
+                        get_current_user, hash_password)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
