@@ -213,6 +213,7 @@ async def reset_login_pin(request: ResetLoginPin, db: AsyncSession = Depends(get
     statement = select(OTP).where(OTP.phone_number == request.phone_number, OTP.otp_code == request.otp)
     result = await db.execute(statement)
     otp_record = result.scalars().first()
+    print(request)
 
     print(request.phone_number)
     print(otp_record)
