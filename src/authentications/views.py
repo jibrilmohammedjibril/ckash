@@ -232,8 +232,7 @@ async def reset_login_pin(request: ResetLoginPin, db: AsyncSession = Depends(get
         raise HTTPException(status_code=400, detail="OTP has expired.")
 
     # Step 2: Invalidate OTP
-    otp_record.is_valid = False
-    db.add(otp_record)
+
 
     # Step 3: Update the user's login pin
     statement = select(User).where(User.phone_number == request.phone_number)
