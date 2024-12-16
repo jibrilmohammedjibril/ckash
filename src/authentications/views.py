@@ -210,11 +210,12 @@ async def forgot_login_pin(request: ForgotLoginPin, db: AsyncSession = Depends(g
 @router.post("/reset-login-pin/")
 async def reset_login_pin(request: ResetLoginPin, db: AsyncSession = Depends(get_db)):
     # Step 1: Validate the OTP
-    statement = select(OTP).where(OTP.phone_number == request.phone_number, OTP.otp_code == request.otp, OTP.is_valid == True)
+    statement = select(OTP).where(OTP.phone_number == request.phone_number, OTP.otp_code == request.otp)
     result = await db.execute(statement)
     otp_record = result.scalars().first()
 
     print(request.phone_number)
+    print(otp_record)
 
     if not otp_record:
         raise HTTPException(status_code=400, detail="Invalid OTP.")
