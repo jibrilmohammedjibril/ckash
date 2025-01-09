@@ -26,9 +26,20 @@ cloudinary.config(
 )
 
 async def send_otp_via_termii(phone_number: str, otp: str, message_template: str):
+    """
+    Send an OTP via both WhatsApp and SMS using Termii.
 
-    await  send_otp_via_termii_whatsapp(phone_number, otp, message_template)
-    await  send_otp_via_termii_text(phone_number, otp, message_template)
+    Args:
+        phone_number (str): The recipient's phone number in international format (e.g., +2341234567890).
+        otp (str): The OTP to send.
+        message_template (str): The message template, e.g., "Your OTP is {otp}."
+
+    Returns:
+        list: A list of responses from each channel (WhatsApp and SMS).
+    """
+    whatsapp_response = await send_otp(phone_number, otp, message_template, channel="whatsapp")
+    text_response = await send_otp(phone_number, otp, message_template, channel="generic")
+    return [whatsapp_response, text_response]
 
 
 async def send_otp_via_termii_whatsapp(phone_number: str, otp: str, message_template: str):
