@@ -25,6 +25,74 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET")  # Replace with your Cloudinary API secret
 )
 
+async def send_otp_via_termii(phone_number: str, otp: str, message_template: str):
+
+    await  send_otp_via_termii_whatsapp(phone_number: str, otp: str, message_template: str)
+    await  send_otp_via_termii_text(phone_number: str, otp: str, message_template: str):
+
+
+async def send_otp_via_termii_whatsapp(phone_number: str, otp: str, message_template: str):
+    """
+    Send an OTP to a phone number using Termii.
+
+    Args:
+        phone_number (str): The recipient's phone number in international format (e.g., +2341234567890).
+        otp (str): The OTP to send.
+        message_template (str): The message template, e.g., "Your OTP is {otp}."
+
+    Returns:
+        dict: Response indicating success or failure.
+    """
+    url = f"{BASE_URL}/api/sms/send"
+    message = message_template.format(otp=otp)
+
+    payload = {
+        "to": phone_number,
+        "from": SENDER_ID,
+        "sms": message,
+        "type": "plain",  # Use 'plain' for standard SMS.
+        "channel": "whatsapp", # Use 'generic' unless you're sending a voice message.
+        "api_key": TERMII_API_KEY,
+    }
+
+    print(f"Sending OTP: {otp} to {phone_number}")
+
+    # Use async with to manage the HTTP client session
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, json=payload)
+            response.raise_for_status()  # Raises an exception for 4xx/5xx responses
+            response_data = response.json()  # Parse the JSON response
+
+            # Extract relevant fields from Termii's response
+            message_id = response_data.get("message_id")
+            balance = response_data.get("balance")
+            user = response_data.get("user")
+            message_status = response_data.get("message", "").lower()
+
+            # Check for success based on Termii's documented response structure
+            if "successfully sent" in message_status:
+                print("OTP sent successfully.")
+                return {
+                    "success": True,
+                    "message": "OTP sent successfully.",
+                    "details": {
+                        "message_id": message_id,
+                        "balance": balance,
+                        "user": user,
+                    },
+                }
+            else:
+                print("OTP failed to send.")
+                return {
+                    "success": False,
+                    "message": response_data.get("message", "Failed to send OTP."),
+                }
+
+        except httpx.HTTPStatusError as e:
+            # Handle non-200 HTTP responses (e.g., 4xx or 5xx errors)
+            print(f"HTTP error occurred: {e}")
+            return {"success": False, "message": f"HTTP error occurred: {e}"}
 
 async def send_otp_via_termii(phone_number: str, otp: str, message_template: str):
     """
@@ -88,6 +156,8 @@ async def send_otp_via_termii(phone_number: str, otp: str, message_template: str
             # Handle non-200 HTTP responses (e.g., 4xx or 5xx errors)
             print(f"HTTP error occurred: {e}")
             return {"success": False, "message": f"HTTP error occurred: {e}"}
+
+
 
 
 async def generate_otp(length=4):
