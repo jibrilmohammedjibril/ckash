@@ -27,8 +27,8 @@ cloudinary.config(
 
 async def send_otp_via_termii(phone_number: str, otp: str, message_template: str):
 
-    await  send_otp_via_termii_whatsapp(phone_number: str, otp: str, message_template: str)
-    await  send_otp_via_termii_text(phone_number: str, otp: str, message_template: str):
+    await  send_otp_via_termii_whatsapp(phone_number, otp, message_template)
+    await  send_otp_via_termii_text(phone_number, otp, message_template)
 
 
 async def send_otp_via_termii_whatsapp(phone_number: str, otp: str, message_template: str):
